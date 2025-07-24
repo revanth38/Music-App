@@ -1,0 +1,34 @@
+import { Injectable } from '@nestjs/common';
+import { Song, SongDocument } from './schemas/song.schema';
+import { Model, set } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+
+@Injectable()
+export class SongsService {
+    constructor(
+        @InjectModel(Song.name) private songModel:Model<SongDocument>,
+    ){}
+
+    async createSong(title: string, artist: string, filePath: string): Promise<Song> {
+        const newSong = new this.songModel({ title, artist, filePath });
+        return newSong.save();
+    }
+
+    async getAllSongs(): Promise<Song[]> {
+        return this.songModel.find();
+    }
+
+    async getSongByfilePath(filepath:string){
+        return this.songModel.find({filePath:filepath})
+    }
+
+    async updateSongLikes(id: string) {
+        const result= await this.songModel.findOneAndUpdate(
+            { _id: id },
+            { $inc: { likes: 1 } },
+            { new: true }
+        );
+        return result;
+    }
+
+}
