@@ -1,9 +1,13 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Body, Put, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, Body, Put, UseGuards, Req, Get, Param, Res, NotFoundException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { SongsService } from './songs.service';
 import { extname } from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import * as fs from 'fs';
+import { Response } from 'express';
+import * as path from 'path';
+
 @Controller('songs')
 export class SongsController {
     constructor(private readonly songsService: SongsService) {}
@@ -36,9 +40,47 @@ export class SongsController {
         return this.songsService.getSongByfilePath(filepath);
     }
 
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @Put('updateLike')
     async updateLikes(@Body('id') id: string){
         return this.songsService.updateSongLikes(id);
+    }
+
+
+    @Get('stream/:filename')
+    async streamSong(@Param('filename') filename: string, @Res() res: Response) {
+        const filePath = path.join(__dirname, '..', '..', 'uploads', filename);
+
+        if (!fs.existsSync(filePath)) {
+        throw new NotFoundException('Song not found');
+        }
+
+        const stat = fs.statSync(filePath);
+        const fileSize = stat.size;
+        const range = res.req.headers.range;
+
+        if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+        const chunkSize = end - start + 1;
+        const file = fs.createReadStream(filePath, { start, end });
+
+        res.writeHead(206, {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunkSize,
+            'Content-Type': 'audio/mpeg',
+        });
+
+        file.pipe(res);
+        } else {
+        res.writeHead(200, {
+            'Content-Length': fileSize,
+            'Content-Type': 'audio/mpeg',
+        });
+        fs.createReadStream(filePath).pipe(res);
+        }
     }
 }
