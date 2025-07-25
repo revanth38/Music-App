@@ -9,8 +9,8 @@ export class SongsService {
         @InjectModel(Song.name) private songModel:Model<SongDocument>,
     ){}
 
-    async createSong(title: string, artist: string, filePath: string): Promise<Song> {
-        const newSong = new this.songModel({ title, artist, filePath });
+    async createSong(title: string, artist: string, filePath: string,userId: string): Promise<Song> {
+        const newSong = new this.songModel({ title, artist, filePath ,uploadedBy:userId});
         return newSong.save();
     }
 
@@ -30,5 +30,27 @@ export class SongsService {
         );
         return result;
     }
+
+    async getSongsByUser(userId: string) {
+        return this.songModel.find({ uploadedBy: userId });
+    }
+
+    async addComment(songId: string, userId: string, comment: string) {
+    return this.songModel.findByIdAndUpdate(
+        songId,
+        { $push: { comments: { user: userId, text: comment } } },
+        { new: true }
+    );
+    }
+
+    async addRating(songId: string, userId: string, value: number) {
+    return this.songModel.findByIdAndUpdate(
+        songId,
+        { $push: { ratings: { user: userId, value } } },
+        { new: true }
+    );
+    }
+
+
 
 }

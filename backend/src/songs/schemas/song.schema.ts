@@ -19,6 +19,15 @@ export class Song{
 
     @Prop({default:0})
     likes:number;
+
+    @Prop({ required: true })
+    uploadedBy: string;
+
+    @Prop({ type: [{ user: String, text: String }], default: [] })
+    comments: { user: string; text: string }[];
+
+    @Prop({ type: [{ user: String, value: Number }], default: [] })
+    ratings: { user: string; value: number }[];
 }
 
 export const SongSchema=SchemaFactory.createForClass(Song);

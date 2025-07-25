@@ -7,11 +7,13 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import * as fs from 'fs';
 import { Response } from 'express';
 import * as path from 'path';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('songs')
 export class SongsController {
     constructor(private readonly songsService: SongsService) {}
     @Post('upload')
+    @UseGuards(AuthGuard('jwt'))
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
         destination: './uploads',
@@ -25,9 +27,11 @@ export class SongsController {
         @UploadedFile() file: Express.Multer.File,
         @Body('title') title: string,
         @Body('artist') artist: string,
+        @Req() req:any
     ) {
         const filePath = file.path;
-        return this.songsService.createSong(title, artist, filePath);
+        const uploadedBy = req.user.id;
+        return this.songsService.createSong(title, artist, filePath,uploadedBy);
     }
 
     @Post('allsongs')
@@ -40,7 +44,7 @@ export class SongsController {
         return this.songsService.getSongByfilePath(filepath);
     }
 
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Put('updateLike')
     async updateLikes(@Body('id') id: string){
         return this.songsService.updateSongLikes(id);
@@ -83,4 +87,25 @@ export class SongsController {
         fs.createReadStream(filePath).pipe(res);
         }
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('myuploads')
+    getUserSongs(@Req() req: any) {
+    const userId = req.user.id;
+    return this.songsService.getSongsByUser(userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('addComment')
+    async addComment(@Body() body: { songId: string; comment: string }, @Req() req) {
+    return this.songsService.addComment(body.songId, req.user.id, body.comment);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('rate')
+    async rateSong(@Body() body: { songId: string; rating: number }, @Req() req) {
+    return this.songsService.addRating(body.songId, req.user.id, body.rating);
+    }
+
+
 }

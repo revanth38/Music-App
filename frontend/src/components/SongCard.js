@@ -9,10 +9,18 @@ const SongCard = ({ song, currentAudioSrc, setCurrentAudioSrc }) => {
   const [liked, setLiked] = useState(false);
 
   const handleLike = () => {
-    if (liked) return; 
+    if (liked) return;
     axios
-      .put('http://localhost:5000/songs/updateLike', { id: song._id })
-      .then(() =>{ 
+      .put(
+        'http://localhost:5000/songs/updateLike',
+        { id: song._id },
+        {
+          headers: {
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4N2E3OWE5OTczMmRmMmNjMTgzNDAzMCIsImVtYWlsIjoicmV2YW50aEBnbWFpbC5jb20iLCJpYXQiOjE3NTM0NTk1NTUsImV4cCI6MTc1MzU0NTk1NX0.gojryzKpTMSplBaEOF6acKSkLVp1EXGV2h5HqXyVgAI`,
+          },
+        }
+      )
+      .then(() => {
         setLike(like + 1);
         setLiked(true);
       })
@@ -118,7 +126,8 @@ const SongCard = ({ song, currentAudioSrc, setCurrentAudioSrc }) => {
 
       <div style={styles.likeRow}>
         <p style={styles.likes}>❤️ {like || 0}</p>
-        <button onClick={handleLike}
+        <button
+          onClick={handleLike}
           style={{
             ...styles.likeBtn,
             backgroundColor: liked ? '#1db954' : '#fff',
@@ -127,7 +136,6 @@ const SongCard = ({ song, currentAudioSrc, setCurrentAudioSrc }) => {
         >
           {liked ? 'Liked 💚' : 'Like'}
         </button>
-
       </div>
     </div>
   );
@@ -196,7 +204,7 @@ const styles = {
     cursor: 'pointer',
     fontWeight: 'bold',
     transition: 'all 0.3s ease',
-  }
+  },
 };
 
 export default SongCard;
